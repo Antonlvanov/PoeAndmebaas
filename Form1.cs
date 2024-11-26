@@ -15,9 +15,13 @@ namespace PoeAndmebaas
     public partial class Form1 : Form
     {
         static string filePath;
+        static string projectRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory);
+        string imageFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"\Pildid");
+
         SqlConnection conn;
         SqlCommand cmd;
         SqlDataAdapter adapter;
+
         OpenFileDialog open;
         SaveFileDialog save;
         Form popupForm;
@@ -37,7 +41,7 @@ namespace PoeAndmebaas
 
         public void FindDB()
         {
-            filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database.mdf");
+            filePath = Path.Combine(projectRoot, "Database.mdf");
 
             if (File.Exists(filePath))
             {
@@ -103,7 +107,7 @@ namespace PoeAndmebaas
                     cmd.ExecuteNonQuery();
                     ID = Convert.ToInt32(cmd.ExecuteScalar());
 
-                    cmd = new SqlCommand("Insert into Toode(Nimetus, Kogus, Hind, Pilt) Values (@toode,@kogus,@hind,@pilt)", conn);
+                    cmd = new SqlCommand("Insert into Toode(Nimetus, Kogus, Hind, Pilt, LaoID) Values (@toode,@kogus,@hind,@pilt,@ladu)", conn);
                     cmd.Parameters.AddWithValue("@toode", Nimetus_txt.Text);
                     cmd.Parameters.AddWithValue("@kogus", Kogus_txt.Text);
                     cmd.Parameters.AddWithValue("@hind", Hind_txt.Text);
@@ -117,9 +121,50 @@ namespace PoeAndmebaas
                     conn.Close();
                     NaitaAndmed();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    MessageBox.Show("Andmebaasiga viga");
+                    MessageBox.Show($"Andmebaasiga viga: {ex.Message}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+            }
+            else
+            {
+                MessageBox.Show("Sisesta andmeid");
+            }
+        }
+
+        private void Uuenda_btn_Click(object sender, EventArgs e)
+        {
+            if (Nimetus_txt.Text.Trim() != string.Empty && Kogus_txt.Text.Trim() != string.Empty && Hind_txt.Text.Trim() != string.Empty)
+            {
+                try
+                {
+                    conn.Open();
+                    cmd = new SqlCommand("Update Toode SET Nimetus=@toode, Kogus=@kogus, Hind=@hind, LaoID=@laoid WHERE Id=@id", conn);
+                    cmd.Parameters.AddWithValue("@id", ID);
+                    cmd.Parameters.AddWithValue("@toode", Nimetus_txt.Text);
+                    cmd.Parameters.AddWithValue("@kogus", Kogus_txt.Text);
+                    cmd.Parameters.AddWithValue("@hind", Hind_txt.Text);
+                    cmd.Parameters.AddWithValue("@pilt", Nimetus_txt.Text + extension);
+                    cmd.Parameters.AddWithValue("@laoid", Ladu_cb.SelectedValue ?? Ladu_cb.SelectedItem.ToString());
+
+                    cmd.ExecuteNonQuery();
+
+                    conn.Close();
+                    NaitaAndmed();
+                    Emaldamine();
+                    MessageBox.Show("Andmed elukalt uuendatud", "Uuendamine");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Andmebaasiga viga: {ex.Message}");
+                }
+                finally
+                {
+                    conn.Close();
                 }
             }
             else
@@ -178,46 +223,20 @@ namespace PoeAndmebaas
             {
                 MessageBox.Show($"Ошибка при удалении файла: {ex.Message}");
             }
-        }
-
-        private void Uuenda_btn_Click(object sender, EventArgs e)
-        {
-            if (Nimetus_txt.Text.Trim() != string.Empty && Kogus_txt.Text.Trim() != string.Empty && Hind_txt.Text.Trim() != string.Empty)
+            finally
             {
-                try
-                {
-                    conn.Open();
-                    cmd = new SqlCommand("Update Toode SET Nimetus=@toode, Kogus=@kogus, Hind=@hind, LaoID=@laoid WHERE Id=@id", conn);
-                    cmd.Parameters.AddWithValue("@id", ID);
-                    cmd.Parameters.AddWithValue("@toode", Nimetus_txt.Text);
-                    cmd.Parameters.AddWithValue("@kogus", Kogus_txt.Text);
-                    cmd.Parameters.AddWithValue("@hind", Hind_txt.Text);
-                    cmd.Parameters.AddWithValue("@pilt", Nimetus_txt.Text + extension);
-                    cmd.Parameters.AddWithValue("@laoid", Ladu_cb);
-                    cmd.ExecuteNonQuery();
-
-                    conn.Close();
-                    NaitaAndmed();
-                    Emaldamine();
-                    MessageBox.Show("Andmed elukalt uuendatud", "Uuendamine");
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Andmebaasiga viga");
-                }
-            }
-            else
-            {
-                MessageBox.Show("Sisesta andmeid");
+                conn.Close();
             }
         }
+
+        
 
         private void Emaldamine()
         {
             Nimetus_txt.Text = "";
             Kogus_txt.Text = "";
             Hind_txt.Text = "";
-            pictureBox1.Image = Image.FromFile(Path.Combine(Path.GetFullPath(@"..\..\Pildid"), "pilt.jpg"));
+            pictureBox1.Image = Image.FromFile(Path.Combine(imageFolder, "pilt.jpg"));
         }
 
         int ID = 0;
@@ -227,29 +246,31 @@ namespace PoeAndmebaas
             Nimetus_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Nimetus"].Value.ToString();
             Kogus_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Kogus"].Value.ToString();
             Hind_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Hind"].Value.ToString();
+
             try
             {
-                pictureBox1.Image = Image.FromFile(Path.Combine(Path.GetFullPath(@"..\..\Pildid"),
+                pictureBox1.Image = Image.FromFile(Path.Combine(imageFolder,
                     dataGridView1.Rows[e.RowIndex].Cells["Pilt"].Value.ToString()));
                 pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                pictureBox1.Image = Image.FromFile(Path.Combine(Path.GetFullPath(@"..\..\Pildid"), "pilt.jpg"));
+                MessageBox.Show($"Viga pildi näitamisega: {ex.Message}");
             }
         }
 
         private void Otsipilt_Click(object sender, EventArgs e)
         {
             open = new OpenFileDialog();
-            open.InitialDirectory = @"C:\Users\opilane\Pictures\";
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database.mdf");
+            open.InitialDirectory = imageFolder;
             open.Multiselect = false;
             open.Filter = "Images Files (*.jpeg;*.png;*.bmp;*.jpg;|*.jpeg;*.png;*.bmp;*.jpg";
-            FileInfo openfile = new FileInfo(@"C:\Users\opilane\Pictures\" + open.FileName);
+            FileInfo openfile = new FileInfo(imageFolder + open.FileName);
             if (open.ShowDialog() == DialogResult.OK && Nimetus_txt != null)
             {
                 save = new SaveFileDialog();
-                save.InitialDirectory = Path.GetFullPath(@"..\..\..\Pildid");
+                save.InitialDirectory = imageFolder;
                 string extension = Path.GetExtension(open.FileName);
 
                 save.FileName = Nimetus_txt.Text + extension;
@@ -263,47 +284,6 @@ namespace PoeAndmebaas
             else
             {
                 MessageBox.Show("Puudub toode nimetus või ole cancel vajatud");
-            }
-        }
-
-        private void ConnectDB_btn_Click(object sender, EventArgs e)
-        {
-            open = new OpenFileDialog
-            {
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                Multiselect = false,
-                Filter = "Database Files (*.mdf)|*.mdf"
-            };
-
-            if (open.ShowDialog() == DialogResult.OK)
-            {
-                try
-                {
-                    string projectRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\");
-                    string databasesFolder = Path.Combine(projectRoot, "Databases");
-                    Directory.CreateDirectory(databasesFolder);
-
-                    // Новый путь для базы данных
-                    string newFilePath = Path.Combine(databasesFolder, Path.GetFileName(open.FileName));
-
-                    // Копируем файл базы данных
-                    File.Copy(open.FileName, newFilePath, overwrite: true);
-
-                    // Обновляем путь для подключения
-                    filePath = newFilePath;
-                    conn.ConnectionString = $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={filePath};Integrated Security=True";
-
-                    // Проверяем подключение
-                    conn.Open();
-                    conn.Close();
-
-                    MessageBox.Show("База данных успешно подключена.");
-                    NaitaAndmed(); // Обновляем данные в интерфейсе
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка подключения: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
             }
         }
     }
