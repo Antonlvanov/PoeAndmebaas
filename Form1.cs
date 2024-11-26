@@ -14,9 +14,10 @@ namespace PoeAndmebaas
 {
     public partial class Form1 : Form
     {
-        static string filePath;
-        static string projectRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory);
-        string imageFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"\Pildid");
+        static string projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\"));
+        static string db_name = "Database.mdf";
+        static string db_path = Path.Combine(projectRoot, "Database.mdf");
+        static string imageFolder = Path.Combine(projectRoot, @"Pildid");
 
         SqlConnection conn;
         SqlCommand cmd;
@@ -41,30 +42,14 @@ namespace PoeAndmebaas
 
         public void FindDB()
         {
-            filePath = Path.Combine(projectRoot, "Database.mdf");
-
-            if (File.Exists(filePath))
+            if (File.Exists(db_path))
             {
-                conn = new SqlConnection($@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={filePath};Integrated Security=True");
+                conn = new SqlConnection($@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={db_path};Integrated Security=True");
             }
             else
             {
                 MessageBox.Show("База данных не найдена. Подключите новую базу данных.", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-        }
-
-        private void NaitaLaod()
-        {
-            conn.Open();
-            cmd = new SqlCommand("SELECT Id, LaoNimetus FROM Ladu", conn);
-            adapter = new SqlDataAdapter(cmd);
-            laotable = new DataTable();
-            adapter.Fill(laotable);
-            foreach (DataRow item in laotable.Rows)
-            {
-                Ladu_cb.Items.Add(item["LaoNimetus"]);
-            }
-            conn.Close();
         }
 
         public void NaitaAndmed()
@@ -77,7 +62,12 @@ namespace PoeAndmebaas
 
             try
             {
-                conn.Open();
+                // Проверяем, если подключение закрыто, то открываем его
+                if (conn.State != ConnectionState.Open)
+                {
+                    conn.Open();
+                }
+
                 cmd = new SqlCommand("SELECT * FROM Toode", conn);
                 adapter = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
@@ -90,40 +80,95 @@ namespace PoeAndmebaas
             }
             finally
             {
-                conn.Close();
+                // Закрытие подключения, если оно открыто
+                if (conn.State == ConnectionState.Open)
+                {
+                    conn.Close();
+                }
             }
         }
 
+        private void NaitaLaod()
+        {
+            if (conn == null)
+            {
+                MessageBox.Show("Подключение к базе данных не настроено.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // Открытие подключения, если оно закрыто
+                if (conn.State != ConnectionState.Open)
+                {
+                    conn.Open();
+                }
+
+                cmd = new SqlCommand("SELECT Id, LaoNimetus FROM Ladu", conn);
+                adapter = new SqlDataAdapter(cmd);
+                laotable = new DataTable();
+                adapter.Fill(laotable);
+                foreach (DataRow item in laotable.Rows)
+                {
+                    Ladu_cb.Items.Add(item["LaoNimetus"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                // Закрытие подключения, если оно открыто
+                if (conn.State == ConnectionState.Open)
+                {
+                    conn.Close();
+                }
+            }
+        }
+
+
+
         private void Lisa_btn_Click(object sender, EventArgs e)
         {
-            if (Nimetus_txt.Text.Trim() != string.Empty && Kogus_txt.Text.Trim() != string.Empty && Hind_txt.Text.Trim() != string.Empty)
+            if (!string.IsNullOrWhiteSpace(Nimetus_txt.Text) &&
+                !string.IsNullOrWhiteSpace(Kogus_txt.Text) &&
+                !string.IsNullOrWhiteSpace(Hind_txt.Text))
             {
                 try
                 {
                     conn.Open();
 
-                    cmd = new SqlCommand("SELECT Id FROM Ladu WHERE LaoNimetus=@ladu", conn);
+                    // Получаем ID склада на основе выбранного наименования
+                    cmd = new SqlCommand("SELECT Id FROM Ladu WHERE LaoNimetus = @ladu", conn);
                     cmd.Parameters.AddWithValue("@ladu", Ladu_cb.Text);
-                    cmd.ExecuteNonQuery();
-                    ID = Convert.ToInt32(cmd.ExecuteScalar());
+                    int laduID = Convert.ToInt32(cmd.ExecuteScalar());
 
-                    cmd = new SqlCommand("Insert into Toode(Nimetus, Kogus, Hind, Pilt, LaoID) Values (@toode,@kogus,@hind,@pilt,@ladu)", conn);
+                    // Определяем расширение файла изображения
+                    string imageFileName = string.Empty;
+                    if (open != null && !string.IsNullOrWhiteSpace(open.FileName))
+                    {
+                        extension = Path.GetExtension(open.FileName); // Получаем расширение файла
+                        imageFileName = Nimetus_txt.Text + extension; // Формируем полное имя файла
+                    }
+
+                    // Подготовка команды вставки записи
+                    cmd = new SqlCommand("INSERT INTO Toode (Nimetus, Kogus, Hind, Pilt, LaoID) VALUES (@toode, @kogus, @hind, @pilt, @ladu)", conn);
                     cmd.Parameters.AddWithValue("@toode", Nimetus_txt.Text);
                     cmd.Parameters.AddWithValue("@kogus", Kogus_txt.Text);
                     cmd.Parameters.AddWithValue("@hind", Hind_txt.Text);
-                    cmd.Parameters.AddWithValue("@pilt", Nimetus_txt.Text + extension);
-
-                    //imageData = File.ReadAllBytes(open.FileName);
-                    cmd.Parameters.AddWithValue("@ladu", ID);
+                    cmd.Parameters.AddWithValue("@pilt", imageFileName); // Сохраняем имя файла с расширением
+                    cmd.Parameters.AddWithValue("@ladu", laduID);
 
                     cmd.ExecuteNonQuery();
 
-                    conn.Close();
-                    NaitaAndmed();
+                    MessageBox.Show("Запись успешно добавлена!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    NaitaAndmed(); // Обновляем отображение данных
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Andmebaasiga viga: {ex.Message}");
+                    MessageBox.Show($"Ошибка базы данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {
@@ -132,9 +177,10 @@ namespace PoeAndmebaas
             }
             else
             {
-                MessageBox.Show("Sisesta andmeid");
+                MessageBox.Show("Пожалуйста, заполните все поля.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
+
 
         private void Uuenda_btn_Click(object sender, EventArgs e)
         {
@@ -229,8 +275,6 @@ namespace PoeAndmebaas
             }
         }
 
-        
-
         private void Emaldamine()
         {
             Nimetus_txt.Text = "";
@@ -246,39 +290,49 @@ namespace PoeAndmebaas
             Nimetus_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Nimetus"].Value.ToString();
             Kogus_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Kogus"].Value.ToString();
             Hind_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Hind"].Value.ToString();
-
-            try
+            
+            if (dataGridView1.Rows[e.RowIndex].Cells["Pilt"].Value.ToString() != "")
             {
-                pictureBox1.Image = Image.FromFile(Path.Combine(imageFolder,
-                    dataGridView1.Rows[e.RowIndex].Cells["Pilt"].Value.ToString()));
-                pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+                try
+                {
+                    pictureBox1.Image = Image.FromFile(Path.Combine(imageFolder,
+                        dataGridView1.Rows[e.RowIndex].Cells["Pilt"].Value.ToString()));
+                    pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Viga pildi näitamisega: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show($"Viga pildi näitamisega: {ex.Message}");
+                pictureBox1.Image = Image.FromFile(Path.Combine(imageFolder, "pilt.jpg"));
             }
         }
 
         private void Otsipilt_Click(object sender, EventArgs e)
         {
             open = new OpenFileDialog();
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database.mdf");
             open.InitialDirectory = imageFolder;
             open.Multiselect = false;
             open.Filter = "Images Files (*.jpeg;*.png;*.bmp;*.jpg;|*.jpeg;*.png;*.bmp;*.jpg";
             FileInfo openfile = new FileInfo(imageFolder + open.FileName);
+
             if (open.ShowDialog() == DialogResult.OK && Nimetus_txt != null)
             {
-                save = new SaveFileDialog();
-                save.InitialDirectory = imageFolder;
                 string extension = Path.GetExtension(open.FileName);
+                string newFileName = Path.Combine(imageFolder, Nimetus_txt.Text + extension);
 
-                save.FileName = Nimetus_txt.Text + extension;
-                save.Filter = "Images" + Path.GetExtension(open.FileName) + "|" + Path.GetExtension(open.FileName);
-                if (save.ShowDialog() == DialogResult.OK && Nimetus_txt != null)
+                try
                 {
-                    File.Copy(open.FileName, save.FileName);
-                    pictureBox1.Image = Image.FromFile(save.FileName);
+                    File.Copy(open.FileName, newFileName, overwrite: true);
+
+                    pictureBox1.Image = Image.FromFile(newFileName);
+                    pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при сохранении файла: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
