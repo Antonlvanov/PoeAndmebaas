@@ -29,6 +29,7 @@ namespace PoeAndmebaas
         DataTable laotable;
         string extension;
         private byte[] imageData;
+        int ID = 0;
         public Form1()
         {
             InitializeComponent();
@@ -46,23 +47,12 @@ namespace PoeAndmebaas
             {
                 conn = new SqlConnection($@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={db_path};Integrated Security=True");
             }
-            else
-            {
-                MessageBox.Show("База данных не найдена. Подключите новую базу данных.", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
         }
 
         public void NaitaAndmed()
         {
-            if (conn == null)
-            {
-                MessageBox.Show("Подключение к базе данных не настроено.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
             try
             {
-                // Проверяем, если подключение закрыто, то открываем его
                 if (conn.State != ConnectionState.Open)
                 {
                     conn.Open();
@@ -76,11 +66,10 @@ namespace PoeAndmebaas
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Viga andmete laadimisel: {ex.Message}", "Viga", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
-                // Закрытие подключения, если оно открыто
                 if (conn.State == ConnectionState.Open)
                 {
                     conn.Close();
@@ -90,15 +79,8 @@ namespace PoeAndmebaas
 
         private void NaitaLaod()
         {
-            if (conn == null)
-            {
-                MessageBox.Show("Подключение к базе данных не настроено.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
             try
             {
-                // Открытие подключения, если оно закрыто
                 if (conn.State != ConnectionState.Open)
                 {
                     conn.Open();
@@ -115,7 +97,7 @@ namespace PoeAndmebaas
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Viga andmete laadimisel: {ex.Message}", "Viga", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
@@ -127,48 +109,40 @@ namespace PoeAndmebaas
             }
         }
 
-
-
         private void Lisa_btn_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(Nimetus_txt.Text) &&
-                !string.IsNullOrWhiteSpace(Kogus_txt.Text) &&
-                !string.IsNullOrWhiteSpace(Hind_txt.Text))
+            if (FieldsNotNull())
             {
                 try
                 {
                     conn.Open();
-
-                    // Получаем ID склада на основе выбранного наименования
+                    // ladu
                     cmd = new SqlCommand("SELECT Id FROM Ladu WHERE LaoNimetus = @ladu", conn);
                     cmd.Parameters.AddWithValue("@ladu", Ladu_cb.Text);
                     int laduID = Convert.ToInt32(cmd.ExecuteScalar());
-
-                    // Определяем расширение файла изображения
+                    // pilt
                     string imageFileName = string.Empty;
                     if (open != null && !string.IsNullOrWhiteSpace(open.FileName))
                     {
-                        extension = Path.GetExtension(open.FileName); // Получаем расширение файла
-                        imageFileName = Nimetus_txt.Text + extension; // Формируем полное имя файла
+                        extension = Path.GetExtension(open.FileName); 
+                        imageFileName = Nimetus_txt.Text + extension;
+                        SavePicture();
                     }
-
-                    // Подготовка команды вставки записи
+                    // andmete valmistamine
                     cmd = new SqlCommand("INSERT INTO Toode (Nimetus, Kogus, Hind, Pilt, LaoID) VALUES (@toode, @kogus, @hind, @pilt, @ladu)", conn);
                     cmd.Parameters.AddWithValue("@toode", Nimetus_txt.Text);
                     cmd.Parameters.AddWithValue("@kogus", Kogus_txt.Text);
                     cmd.Parameters.AddWithValue("@hind", Hind_txt.Text);
-                    cmd.Parameters.AddWithValue("@pilt", imageFileName); // Сохраняем имя файла с расширением
+                    cmd.Parameters.AddWithValue("@pilt", imageFileName);
                     cmd.Parameters.AddWithValue("@ladu", laduID);
-
+                    // käski käivitamine
                     cmd.ExecuteNonQuery();
-
-                    MessageBox.Show("Запись успешно добавлена!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    NaitaAndmed(); // Обновляем отображение данных
+                    ClearFields();
+                    NaitaAndmed();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка базы данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Andmebaasi viga: {ex.Message}", "Viga", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {
@@ -177,31 +151,116 @@ namespace PoeAndmebaas
             }
             else
             {
-                MessageBox.Show("Пожалуйста, заполните все поля.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Palun täitke kõik väljad.", "Viga", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
+        private void ClearPictureBox()
+        {
+            if (pictureBox1.Image != null)
+            {
+                pictureBox1.Image.Dispose();
+                pictureBox1.Image = null;
+                GC.Collect(); 
+                GC.WaitForPendingFinalizers(); 
+            }
+        }
 
+        private void Otsipilt_Click(object sender, EventArgs e)
+        {
+            open = new OpenFileDialog();
+            open.InitialDirectory = projectRoot; //Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            open.Multiselect = false;
+            open.Filter = "Images Files (*.jpeg;*.png;*.bmp;*.jpg;|*.jpeg;*.png;*.bmp;*.jpg";
+
+            if (open.ShowDialog() == DialogResult.OK && Nimetus_txt != null)
+            {
+                Pildi_tee.Text = open.FileName;
+
+                pictureBox1.Image = Image.FromFile(open.FileName);
+                pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+            }
+            else
+            {
+                MessageBox.Show("Puudub toode nimetus või ole cancel vajatud");
+            }
+        }
+
+        private void SavePicture()
+        {
+            string extension = Path.GetExtension(open.FileName);
+            string newFile = Path.Combine(imageFolder, Nimetus_txt.Text + extension);
+            try
+            {
+                ClearPictureBox();
+                File.Copy(open.FileName, newFile, overwrite: true);
+                open.Dispose();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Viga faili salvestamisel: {ex.Message}", "Viga", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void Delete_picture(string picName)
+        {
+            try
+            {
+                ClearPictureBox();
+                string picPath = Path.Combine(imageFolder, picName);
+                if (File.Exists(picPath))
+                {
+                    File.Delete(picPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Viga faili kustutamisel: {ex.Message}");
+            }
+        }
+        private void Pildi_uuendamine(string newImageName, string oldImageName)
+        { 
+            if (oldImageName != newImageName && open == null) // if rename image
+            {
+                ClearPictureBox();
+                string oldPath = Path.Combine(imageFolder, oldImageName);
+                string newPath = Path.Combine(imageFolder, newImageName);
+                if (File.Exists(oldPath))
+                {
+                    File.Move(oldPath, newPath);
+                }
+            }
+            if (open != null && !string.IsNullOrWhiteSpace(open.FileName) && File.Exists(Pildi_tee.Text.ToString())) // if image being replaced
+            {
+                SavePicture();
+                Delete_picture(oldImageName);
+            }
+        }
         private void Uuenda_btn_Click(object sender, EventArgs e)
         {
-            if (Nimetus_txt.Text.Trim() != string.Empty && Kogus_txt.Text.Trim() != string.Empty && Hind_txt.Text.Trim() != string.Empty)
+            if (FieldsNotNull())
             {
                 try
                 {
+                    string oldImageName = dataGridView1.SelectedRows[0].Cells["Pilt"].Value.ToString();
+                    string newImageName = Nimetus_txt.Text + (open != null ? Path.GetExtension(open.FileName) : Path.GetExtension(oldImageName));
+                    Pildi_uuendamine(newImageName, oldImageName);
+
                     conn.Open();
-                    cmd = new SqlCommand("Update Toode SET Nimetus=@toode, Kogus=@kogus, Hind=@hind, LaoID=@laoid WHERE Id=@id", conn);
+                    cmd = new SqlCommand("Update Toode SET Nimetus=@toode, Kogus=@kogus, Hind=@hind, Pilt=@pilt, LaoID=@laoid WHERE Id=@id", conn);
                     cmd.Parameters.AddWithValue("@id", ID);
                     cmd.Parameters.AddWithValue("@toode", Nimetus_txt.Text);
                     cmd.Parameters.AddWithValue("@kogus", Kogus_txt.Text);
                     cmd.Parameters.AddWithValue("@hind", Hind_txt.Text);
-                    cmd.Parameters.AddWithValue("@pilt", Nimetus_txt.Text + extension);
-                    cmd.Parameters.AddWithValue("@laoid", Ladu_cb.SelectedValue ?? Ladu_cb.SelectedItem.ToString());
+                    cmd.Parameters.AddWithValue("@pilt", newImageName);
+                    cmd.Parameters.AddWithValue("@laoid", Ladu_cb.SelectedIndex + 1);
 
                     cmd.ExecuteNonQuery();
 
                     conn.Close();
+
                     NaitaAndmed();
-                    Emaldamine();
+                    ClearFields();
+                    ClearPictureBox();
                     MessageBox.Show("Andmed elukalt uuendatud", "Uuendamine");
                 }
                 catch (Exception ex)
@@ -232,65 +291,49 @@ namespace PoeAndmebaas
                     cmd.ExecuteNonQuery();
                     conn.Close();
 
-                    // Удаляем файл
-                    Kustuta_fail(dataGridView1.SelectedRows[0].Cells["Pilt"].Value.ToString());
+                    ClearFields();
+                    Delete_picture(dataGridView1.SelectedRows[0].Cells["Pilt"].Value.ToString());
 
-                    Emaldamine();
                     NaitaAndmed();
-
-                    MessageBox.Show("Запись успешно удалена", "Удаление");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при удалении записи: {ex.Message}");
+                MessageBox.Show($"Viga kirje kustutamisel: {ex.Message}");
             }
         }
 
-        private void Kustuta_fail(string file)
+        private void ClearFields()
         {
-            try
-            {
-                // Полный путь к файлу
-                string filePath = Path.Combine(Path.GetFullPath(@"..\..\Pildid"), file);
-
-                // Проверяем, существует ли файл
-                if (File.Exists(filePath))
-                {
-                    // Сбрасываем картинку в PictureBox
-                    pictureBox1.Image?.Dispose();
-                    pictureBox1.Image = null;
-
-                    // Удаляем файл
-                    File.Delete(filePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при удалении файла: {ex.Message}");
-            }
-            finally
-            {
-                conn.Close();
-            }
+            Nimetus_txt.Text = null;
+            Kogus_txt.Text = null;
+            Hind_txt.Text = null;
+            Ladu_cb.Text = null;
+            Pildi_tee.Text = null;
+            pictureBox1.Image?.Dispose();
         }
 
-        private void Emaldamine()
+        private bool FieldsNotNull()
         {
-            Nimetus_txt.Text = "";
-            Kogus_txt.Text = "";
-            Hind_txt.Text = "";
-            pictureBox1.Image = Image.FromFile(Path.Combine(imageFolder, "pilt.jpg"));
+            if (!string.IsNullOrWhiteSpace(Nimetus_txt.Text) &&
+                !string.IsNullOrWhiteSpace(Kogus_txt.Text) &&
+                !string.IsNullOrWhiteSpace(Hind_txt.Text) &&
+                !string.IsNullOrWhiteSpace(Ladu_cb.Text))
+            {
+                return true;
+            }
+            return false;
         }
-
-        int ID = 0;
         private void dataGridView1_RowHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
             ID = (int)dataGridView1.Rows[e.RowIndex].Cells["Id"].Value;
             Nimetus_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Nimetus"].Value.ToString();
             Kogus_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Kogus"].Value.ToString();
             Hind_txt.Text = dataGridView1.Rows[e.RowIndex].Cells["Hind"].Value.ToString();
-            
+
+            Ladu_cb.SelectedIndex = Convert.ToInt32(dataGridView1.Rows[e.RowIndex].Cells["LaoID"].Value) - 1;
+
+
             if (dataGridView1.Rows[e.RowIndex].Cells["Pilt"].Value.ToString() != "")
             {
                 try
@@ -310,36 +353,6 @@ namespace PoeAndmebaas
             }
         }
 
-        private void Otsipilt_Click(object sender, EventArgs e)
-        {
-            open = new OpenFileDialog();
-            open.InitialDirectory = imageFolder;
-            open.Multiselect = false;
-            open.Filter = "Images Files (*.jpeg;*.png;*.bmp;*.jpg;|*.jpeg;*.png;*.bmp;*.jpg";
-            FileInfo openfile = new FileInfo(imageFolder + open.FileName);
-
-            if (open.ShowDialog() == DialogResult.OK && Nimetus_txt != null)
-            {
-                string extension = Path.GetExtension(open.FileName);
-                string newFileName = Path.Combine(imageFolder, Nimetus_txt.Text + extension);
-
-                try
-                {
-                    File.Copy(open.FileName, newFileName, overwrite: true);
-
-                    pictureBox1.Image = Image.FromFile(newFileName);
-                    pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при сохранении файла: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Puudub toode nimetus või ole cancel vajatud");
-            }
-        }
     }
 
     //public partial class Form1 : Form

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.connectDB_btn = new System.Windows.Forms.Button();
             this.otsipilt = new System.Windows.Forms.Button();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.uuenda_btn = new System.Windows.Forms.Button();
@@ -43,36 +42,28 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.Ladu_cb = new System.Windows.Forms.ComboBox();
+            this.Pildi_tee = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
-            // connectDB_btn
-            // 
-            this.connectDB_btn.Location = new System.Drawing.Point(675, 198);
-            this.connectDB_btn.Name = "connectDB_btn";
-            this.connectDB_btn.Size = new System.Drawing.Size(93, 33);
-            this.connectDB_btn.TabIndex = 25;
-            this.connectDB_btn.Text = "Lisa andmebaas";
-            this.connectDB_btn.UseVisualStyleBackColor = true;
-            //this.connectDB_btn.Click += new System.EventHandler(this.ConnectDB_btn_Click);
-            // 
             // otsipilt
             // 
             this.otsipilt.Font = new System.Drawing.Font("Microsoft JhengHei", 11.25F, System.Drawing.FontStyle.Bold);
-            this.otsipilt.Location = new System.Drawing.Point(355, 201);
+            this.otsipilt.Location = new System.Drawing.Point(297, 64);
             this.otsipilt.Name = "otsipilt";
-            this.otsipilt.Size = new System.Drawing.Size(92, 24);
+            this.otsipilt.Size = new System.Drawing.Size(86, 24);
             this.otsipilt.TabIndex = 24;
-            this.otsipilt.Text = "Otsi pilt";
+            this.otsipilt.Text = "Vali pilt";
             this.otsipilt.UseVisualStyleBackColor = true;
             this.otsipilt.Click += new System.EventHandler(this.Otsipilt_Click);
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Location = new System.Drawing.Point(469, 12);
+            this.pictureBox1.Location = new System.Drawing.Point(430, 12);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(299, 174);
+            this.pictureBox1.Size = new System.Drawing.Size(338, 213);
             this.pictureBox1.TabIndex = 23;
             this.pictureBox1.TabStop = false;
             // 
@@ -120,23 +111,23 @@
             // 
             // Hind_txt
             // 
-            this.Hind_txt.Location = new System.Drawing.Point(114, 105);
+            this.Hind_txt.Location = new System.Drawing.Point(115, 105);
             this.Hind_txt.Name = "Hind_txt";
-            this.Hind_txt.Size = new System.Drawing.Size(119, 20);
+            this.Hind_txt.Size = new System.Drawing.Size(92, 20);
             this.Hind_txt.TabIndex = 18;
             // 
             // Kogus_txt
             // 
-            this.Kogus_txt.Location = new System.Drawing.Point(114, 68);
+            this.Kogus_txt.Location = new System.Drawing.Point(115, 68);
             this.Kogus_txt.Name = "Kogus_txt";
-            this.Kogus_txt.Size = new System.Drawing.Size(119, 20);
+            this.Kogus_txt.Size = new System.Drawing.Size(92, 20);
             this.Kogus_txt.TabIndex = 17;
             // 
             // Nimetus_txt
             // 
             this.Nimetus_txt.Location = new System.Drawing.Point(115, 32);
             this.Nimetus_txt.Name = "Nimetus_txt";
-            this.Nimetus_txt.Size = new System.Drawing.Size(119, 20);
+            this.Nimetus_txt.Size = new System.Drawing.Size(92, 20);
             this.Nimetus_txt.TabIndex = 16;
             // 
             // label2
@@ -182,19 +173,37 @@
             // Ladu_cb
             // 
             this.Ladu_cb.FormattingEnabled = true;
-            this.Ladu_cb.Location = new System.Drawing.Point(112, 142);
+            this.Ladu_cb.Location = new System.Drawing.Point(115, 142);
             this.Ladu_cb.Name = "Ladu_cb";
-            this.Ladu_cb.Size = new System.Drawing.Size(121, 21);
+            this.Ladu_cb.Size = new System.Drawing.Size(92, 21);
             this.Ladu_cb.TabIndex = 27;
+            // 
+            // Pildi_tee
+            // 
+            this.Pildi_tee.Location = new System.Drawing.Point(266, 32);
+            this.Pildi_tee.Name = "Pildi_tee";
+            this.Pildi_tee.Size = new System.Drawing.Size(117, 20);
+            this.Pildi_tee.TabIndex = 29;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Font = new System.Drawing.Font("Microsoft JhengHei", 12F, System.Drawing.FontStyle.Bold);
+            this.label4.Location = new System.Drawing.Point(226, 32);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(34, 21);
+            this.label4.TabIndex = 28;
+            this.label4.Text = "Pilt";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.Pildi_tee);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.Ladu_cb);
             this.Controls.Add(this.label3);
-            this.Controls.Add(this.connectDB_btn);
             this.Controls.Add(this.otsipilt);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.uuenda_btn);
@@ -217,8 +226,6 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.Button connectDB_btn;
         private System.Windows.Forms.Button otsipilt;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button uuenda_btn;
@@ -233,6 +240,8 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.ComboBox Ladu_cb;
+        private System.Windows.Forms.TextBox Pildi_tee;
+        private System.Windows.Forms.Label label4;
     }
 }
 
