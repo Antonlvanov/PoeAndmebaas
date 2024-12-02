@@ -61,21 +61,46 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataAcess.cs" />
-    <Compile Include="Form1.cs">
+    <Compile Include="AvaVorm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="AvaVorm.Designer.cs">
+      <DependentUpon>AvaVorm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CartItem.cs" />
+    <Compile Include="AB_HaaldamineVorm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AB_HaaldamineVorm.Designer.cs">
+      <DependentUpon>AB_HaaldamineVorm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="KorviVorm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="KorviVorm.Designer.cs">
+      <DependentUpon>KorviVorm.cs</DependentUpon>
     </Compile>
     <Compile Include="Ladu.cs" />
-    <Compile Include="LaduService.cs" />
+    <Compile Include="LoginVorm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LoginVorm.Designer.cs">
+      <DependentUpon>LoginVorm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Toode.cs" />
-    <Compile Include="ToodeRepository.cs" />
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <EmbeddedResource Include="AB_HaaldamineVorm.resx">
+      <DependentUpon>AB_HaaldamineVorm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AvaVorm.resx">
+      <DependentUpon>AvaVorm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="KorviVorm.resx">
+      <DependentUpon>KorviVorm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LoginVorm.resx">
+      <DependentUpon>LoginVorm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -85,6 +110,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -122,6 +148,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <DependentUpon>Database.mdf</DependentUpon>
     </Content>
+    <None Include="usericon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
