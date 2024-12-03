@@ -39,19 +39,18 @@ namespace PoeAndmebaas
 
         private void AddToCart(string productName, decimal price)
         {
-            // Проверяем, есть ли товар уже в корзине
             CartItem existingItem = cart.FirstOrDefault(item => item.Name == productName);
 
             if (existingItem != null)
             {
-                existingItem.Quantity++;  // Увеличиваем количество, если товар уже в корзине
+                existingItem.Quantity++;  
             }
             else
             {
-                cart.Add(new CartItem(productName, price));  // Добавляем новый товар в корзину
+                cart.Add(new CartItem(productName, price)); 
             }
 
-            UpdateCartDisplay();  // Обновляем отображение корзины
+            UpdateCartDisplay();  
         }
 
         private void LoadProducts()
@@ -64,59 +63,83 @@ namespace PoeAndmebaas
 
                 while (reader.Read())
                 {
+                    string productName = reader["Nimetus"].ToString();
+                    decimal productPrice = Convert.ToDecimal(reader["Hind"]);
+                    int productQuantity = Convert.ToInt32(reader["Kogus"]);
+                    string productImagePath = Path.Combine(imageFolder, reader["Pilt"].ToString());
+
                     Panel productPanel = new Panel();
-                    productPanel.Size = new Size(tootePanel.Width/3, tootePanel.Height/2);
+                    productPanel.Size = new Size(tootePanel.Width / 3 - 10, tootePanel.Height / 2 - 10);
+                    productPanel.Margin = new Padding(5);
+                    productPanel.BorderStyle = BorderStyle.FixedSingle;
 
-                    // Картинка 
-                    PictureBox pictureBox = new PictureBox();
-                    pictureBox.Image = Image.FromFile(Path.Combine(imageFolder, reader["Pilt"].ToString()));
-                    pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
-                    pictureBox.Size = new Size(productPanel.Width, productPanel.Height-productPanel.Height/4);
-
-                    // Название
                     Label nameLabel = new Label();
-                    nameLabel.Text = reader["Nimetus"].ToString();
+                    nameLabel.Text = productName;
+                    nameLabel.Font = new Font("Arial", 12, FontStyle.Bold);
+                    nameLabel.TextAlign = ContentAlignment.MiddleCenter;
                     nameLabel.Dock = DockStyle.Top;
+                    nameLabel.Height = 30;
 
-                    // Цена
+                    PictureBox pictureBox = new PictureBox();
+                    pictureBox.Image = Image.FromFile(productImagePath);
+                    pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
+                    pictureBox.Dock = DockStyle.Top;
+                    pictureBox.Height = productPanel.Height - 110;
+
+                    Panel infoPanel = new Panel();
+                    infoPanel.Dock = DockStyle.Top;
+                    infoPanel.Height = 40;
+
                     Label priceLabel = new Label();
-                    priceLabel.Text = "Цена: " + reader["Hind"].ToString() + " €";
-                    priceLabel.Dock = DockStyle.Top;
+                    priceLabel.Text = "Hind: " + productPrice.ToString() + " €";
+                    priceLabel.Font = new Font("Arial", 10);
+                    priceLabel.AutoSize = false; 
+                    priceLabel.Size = new Size(infoPanel.Width / 2 - 10, 30); 
+                    priceLabel.Location = new Point(5, 5); 
 
-                    // Количество
                     Label quantityLabel = new Label();
-                    quantityLabel.Text = "Количество: " + reader["Kogus"].ToString();
-                    quantityLabel.Dock = DockStyle.Top;
+                    quantityLabel.Text = "Kogus: " + productQuantity.ToString();
+                    quantityLabel.Font = new Font("Arial", 10);
+                    quantityLabel.AutoSize = false;
+                    quantityLabel.Size = new Size(infoPanel.Width / 2 - 10, 30); 
+                    quantityLabel.Location = new Point(infoPanel.Width / 2, 5); 
 
-                    // Кнопка добавления
+                    infoPanel.Controls.Add(priceLabel);
+                    infoPanel.Controls.Add(quantityLabel);
+
                     Button addButton = new Button();
-                    addButton.Text = "Добавить в корзину";
+                    addButton.Text = "Lisa ostukorvi";
                     addButton.Dock = DockStyle.Bottom;
-                    addButton.Click += (sender, e) => AddToCart(reader["Nimetus"].ToString(), Convert.ToDecimal(reader["Hind"]));
+                    addButton.Height = 30;
 
-                    // Добавляем компоненты на панель
-                    productPanel.Controls.Add(nameLabel);
-                    productPanel.Controls.Add(pictureBox);
-                    productPanel.Controls.Add(priceLabel);
-                    productPanel.Controls.Add(quantityLabel);
+                    addButton.Click += (sender, e) => AddToCart(productName, productPrice);
+
                     productPanel.Controls.Add(addButton);
+                    productPanel.Controls.Add(infoPanel);
+                    productPanel.Controls.Add(pictureBox);
+                    productPanel.Controls.Add(nameLabel);
 
-                    // Добавляем панель товара в FlowLayoutPanel
                     tootePanel.Controls.Add(productPanel);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки товаров: {ex.Message}");
+                MessageBox.Show($"Viga kauba laadimisel: {ex.Message}");
+            }
+            finally
+            {
+                conn.Close(); 
             }
         }
+
+
         private void UpdateCartDisplay()
         {
-            cartListBox.Items.Clear();  // Очищаем текущий список корзины
+            cartListBox.Items.Clear(); 
 
             foreach (CartItem item in cart)
             {
-                cartListBox.Items.Add($"{item.Name} - {item.Quantity} шт. - {item.Price * item.Quantity} €");
+                cartListBox.Items.Add($"{item.Name} - {item.Quantity} tk. - {item.Price * item.Quantity} €");
             }
         }
     }

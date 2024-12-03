@@ -35,6 +35,7 @@
             // 
             // tootePanel
             // 
+            this.tootePanel.AutoScroll = true;
             this.tootePanel.Location = new System.Drawing.Point(5, 3);
             this.tootePanel.Name = "tootePanel";
             this.tootePanel.Size = new System.Drawing.Size(600, 450);
